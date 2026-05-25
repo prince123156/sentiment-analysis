@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sentiment Chat</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --panel-2: #eef3f7;
+      --text: #172033;
+      --muted: #64748b;
+      --line: #d8e0e8;
+      --green: #059669;
+      --red: #e11d48;
+      --gray: #64748b;
+      --blue: #2563eb;
+      --amber: #d97706;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body.dark {
+      --bg: #0f172a;
+      --panel: #141c2b;
+      --panel-2: #1d2738;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --line: #283548;
+    }
+
+    button, input, select { font: inherit; }
+    button {
+      border: 0;
+      border-radius: 8px;
+      background: var(--panel-2);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 650;
+      padding: 10px 12px;
+    }
+
+    button.primary { background: var(--green); color: white; }
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--text);
+      outline: 0;
+      padding: 11px 12px;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: 64px 1fr;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+      padding: 0 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .logo {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--green);
+      color: white;
+      font-weight: 900;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .shell {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr) 320px;
+    }
+
+    aside, .insights {
+      min-height: 0;
+      overflow: auto;
+      background: var(--panel);
+    }
+
+    aside {
+      border-right: 1px solid var(--line);
+      padding: 16px;
+    }
+
+    .insights {
+      border-left: 1px solid var(--line);
+      padding: 16px;
+    }
+
+    .section-title {
+      margin: 4px 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .room {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+
+    .room.active {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    body.dark .room.active {
+      background: #064e3b;
+      color: #d1fae5;
+    }
+
+    .badge {
+      min-width: 24px;
+      border-radius: 999px;
+      background: var(--red);
+      color: white;
+      font-size: 12px;
+      padding: 2px 7px;
+      text-align: center;
+    }
+
+    .online {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .pulse {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--green);
+    }
+
+    .chat {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      background: var(--bg);
+    }
+
+    .chat-head {
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+      padding: 16px 20px;
+    }
+
+    .chat-head h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .chat-head p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .warning {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #f3d19c;
+      background: #fff7ed;
+      color: #9a3412;
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+
+    body.dark .warning {
+      background: #431407;
+      color: #fed7aa;
+      border-color: #7c2d12;
+    }
+
+    .warning.show { display: flex; }
+
+    .messages {
+      min-height: 0;
+      overflow: auto;
+      padding: 22px;
+    }
+
+    .message {
+      display: flex;
+      gap: 10px;
+      max-width: 860px;
+      margin-bottom: 14px;
+    }
+
+    .message.mine {
+      justify-content: flex-end;
+      margin-left: auto;
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .bubble {
+      max-width: min(680px, 78vw);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .08);
+      padding: 10px 12px;
+    }
+
+    .mine .bubble {
+      background: var(--green);
+      color: white;
+    }
+
+    .meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .mine .meta { color: rgba(255,255,255,.78); }
+    .text { line-height: 1.55; word-break: break-word; }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .positive { background: var(--green); }
+    .neutral { background: var(--gray); }
+    .negative { background: var(--red); }
+
+    .composer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+      background: var(--panel);
+      padding: 14px 18px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .metric {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .metric strong { font-size: 24px; }
+    .bar {
+      height: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--panel-2);
+      margin: 8px 0 14px;
+    }
+
+    .fill { height: 100%; border-radius: inherit; }
+
+    .mobile-room {
+      display: none;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+      padding: 12px 16px;
+    }
+
+    @media (max-width: 1080px) {
+      .shell { grid-template-columns: 280px minmax(0, 1fr); }
+      .insights { display: none; }
+      body.dashboard-open .insights {
+        display: block;
+        position: fixed;
+        z-index: 10;
+        inset: 64px 0 0 auto;
+        width: min(360px, 92vw);
+        box-shadow: -18px 0 38px rgba(15, 23, 42, .2);
+      }
+    }
+
+    @media (max-width: 760px) {
+      header { padding: 0 12px; }
+      .brand span:last-child { display: none; }
+      .shell { grid-template-columns: 1fr; }
+      aside { display: none; }
+      .mobile-room { display: block; }
+      .messages { padding: 16px; }
+      .bubble { max-width: 82vw; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">S</div>
+        <span>Sentiment Chat</span>
+      </div>
+      <div class="nav">
+        <button id="dashboardBtn">Dashboard</button>
+        <button id="themeBtn">Dark</button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <aside>
+        <p class="section-title">Rooms</p>
+        <div id="roomList"></div>
+        <p class="section-title">Online</p>
+        <div class="online"><span class="pulse"></span> Aarav is online</div>
+        <div class="online"><span class="pulse"></span> Mira is online</div>
+        <div class="online"><span class="pulse"></span> You are online</div>
+      </aside>
+
+      <section class="chat">
+        <div class="mobile-room">
+          <select id="mobileRooms"></select>
+        </div>
+        <div class="chat-head">
+          <h1 id="roomTitle">General</h1>
+          <p id="typingText">Messages show positive, neutral, or negative sentiment.</p>
+        </div>
+        <div class="warning" id="warning">Warning: this room is getting highly negative.</div>
+        <div class="messages" id="messages"></div>
+        <form class="composer" id="messageForm">
+          <input id="messageInput" autocomplete="off" placeholder="Type a message. Try: this is great, or this is a problem">
+          <button class="primary">Send</button>
+        </form>
+      </section>
+
+      <section class="insights">
+        <p class="section-title">Dashboard</p>
+        <div class="card metric">
+          <span>Total messages</span>
+          <strong id="totalMessages">0</strong>
+        </div>
+        <div class="card metric">
+          <span>Active users</span>
+          <strong>3</strong>
+        </div>
+        <div class="card">
+          <strong>Sentiment distribution</strong>
+          <div class="bar"><div id="positiveBar" class="fill positive"></div></div>
+          <div class="bar"><div id="neutralBar" class="fill neutral"></div></div>
+          <div class="bar"><div id="negativeBar" class="fill negative"></div></div>
+        </div>
+        <div class="card">
+          <strong>System status</strong>
+          <p style="color:var(--muted);line-height:1.5">Frontend preview, backend API preview, and sentiment API preview are responding locally.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const rooms = [
+      { id: "general", name: "General", unread: 0 },
+      { id: "project", name: "Project", unread: 2 },
+      { id: "support", name: "Support", unread: 1 }
+    ];
+
+    let activeRoom = "general";
+    let negativeStreak = 0;
+    const messages = [
+      makeMessage("general", "Aarav", "This app feels much better with sentiment labels.", "positive", -14),
+      makeMessage("general", "Mira", "Keeping the Python service separate makes debugging easier.", "neutral", -9),
+      makeMessage("general", "You", "Fallback handling keeps the chat usable even if analysis is offline.", "positive", -4),
+      makeMessage("project", "Dev", "The dashboard should stay simple and readable.", "neutral", -7),
+      makeMessage("support", "Mira", "A negative message can trigger the warning banner after a streak.", "negative", -2)
+    ];
+
+    const roomList = document.getElementById("roomList");
+    const mobileRooms = document.getElementById("mobileRooms");
+    const roomTitle = document.getElementById("roomTitle");
+    const typingText = document.getElementById("typingText");
+    const messagesEl = document.getElementById("messages");
+    const warning = document.getElementById("warning");
+    const totalMessages = document.getElementById("totalMessages");
+    const messageInput = document.getElementById("messageInput");
+
+    function makeMessage(room, sender, text, sentiment, offsetMinutes = 0) {
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        room,
+        sender,
+        text,
+        sentiment,
+        createdAt: new Date(Date.now() + offsetMinutes * 60000)
+      };
+    }
+
+    function sentimentFor(text) {
+      const value = text.toLowerCase();
+      const positives = ["good", "great", "love", "happy", "nice", "better", "excellent", "clean", "thanks"];
+      const negatives = ["bad", "sad", "angry", "hate", "terrible", "awful", "problem", "crash", "broken"];
+      const pos = positives.filter((word) => value.includes(word)).length;
+      const neg = negatives.filter((word) => value.includes(word)).length;
+      if (neg > pos) return "negative";
+      if (pos > neg) return "positive";
+      return "neutral";
+    }
+
+    function initials(name) {
+      return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char]));
+    }
+
+    function selectRoom(id) {
+      activeRoom = id;
+      const room = rooms.find((item) => item.id === id);
+      room.unread = 0;
+      roomTitle.textContent = room.name;
+      mobileRooms.value = id;
+      warning.classList.remove("show");
+      renderRooms();
+      renderMessages();
+    }
+
+    function renderRooms() {
+      roomList.innerHTML = rooms.map((room) => `
+        <button class="room ${room.id === activeRoom ? "active" : ""}" onclick="selectRoom('${room.id}')">
+          <span># ${room.name}</span>
+          ${room.unread ? `<span class="badge">${room.unread}</span>` : "<span></span>"}
+        </button>
+      `).join("");
+
+      mobileRooms.innerHTML = rooms.map((room) => `<option value="${room.id}">${room.name}</option>`).join("");
+      mobileRooms.value = activeRoom;
+    }
+
+    function renderMessages() {
+      const list = messages.filter((message) => message.room === activeRoom);
+      messagesEl.innerHTML = list.map((message) => {
+        const mine = message.sender === "You";
+        const time = new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        return `
+          <div class="message ${mine ? "mine" : ""}">
+            ${mine ? "" : `<div class="avatar">${initials(message.sender)}</div>`}
+            <div class="bubble">
+              <div class="meta">
+                <span>${mine ? "You" : escapeHtml(message.sender)}</span>
+                <span>${time}</span>
+                <span title="${message.sentiment}" class="dot ${message.sentiment}"></span>
+              </div>
+              <div class="text">${escapeHtml(message.text)}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      updateDashboard();
+    }
+
+    function updateDashboard() {
+      totalMessages.textContent = messages.length;
+      const counts = { positive: 0, neutral: 0, negative: 0 };
+      messages.forEach((message) => counts[message.sentiment]++);
+      const total = Math.max(messages.length, 1);
+      document.getElementById("positiveBar").style.width = `${counts.positive / total * 100}%`;
+      document.getElementById("neutralBar").style.width = `${counts.neutral / total * 100}%`;
+      document.getElementById("negativeBar").style.width = `${counts.negative / total * 100}%`;
+    }
+
+    document.getElementById("messageForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const text = messageInput.value.trim();
+      if (!text) return;
+      const sentiment = sentimentFor(text);
+      messages.push(makeMessage(activeRoom, "You", text, sentiment));
+      messageInput.value = "";
+
+      if (sentiment === "negative") negativeStreak += 1;
+      if (sentiment === "positive") negativeStreak = 0;
+      warning.classList.toggle("show", negativeStreak >= 2);
+
+      typingText.textContent = sentiment === "negative"
+        ? "Message sent with negative sentiment."
+        : sentiment === "positive"
+          ? "Message sent with positive sentiment."
+          : "Message sent with neutral sentiment.";
+
+      renderMessages();
+    });
+
+    messageInput.addEventListener("input", () => {
+      typingText.textContent = messageInput.value ? "You are typing..." : "Messages show positive, neutral, or negative sentiment.";
+    });
+
+    mobileRooms.addEventListener("change", (event) => selectRoom(event.target.value));
+    document.getElementById("themeBtn").addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      document.getElementById("themeBtn").textContent = document.body.classList.contains("dark") ? "Light" : "Dark";
+    });
+    document.getElementById("dashboardBtn").addEventListener("click", () => {
+      document.body.classList.toggle("dashboard-open");
+      document.getElementById("dashboardBtn").textContent = document.body.classList.contains("dashboard-open") ? "Close" : "Dashboard";
+    });
+
+    window.selectRoom = selectRoom;
+    renderRooms();
+    renderMessages();
+  </script>
+</body>
+</html>
